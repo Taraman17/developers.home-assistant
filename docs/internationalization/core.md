@@ -151,6 +151,23 @@ The translation for selectors are defined under the `selector` key. It supports 
 
 ```
 
+The `unit_of_measurement` of a number selector may also be translated with a translation key:
+```json
+{
+  // Translations for number selector to be used in option and config flows
+  "selector": {
+    // The key is linked to the `translation_key` that needs to be set
+    // using the NumberSelectorConfig class
+    "round_digits": {
+      // The translations for the number selector unit_of_measurement
+      "unit_of_measurement": {
+        "decimals": "decimals"
+      }
+    }
+  }
+}
+```
+
 ### Service Actions
 
 The translations of service actions strings are defined under the `services` key.
@@ -272,7 +289,7 @@ The translation strings for repairs issues are defined under the `issues` key. A
       // The title of the issue
       "title": "The tea is cold",
       // Translations for a fixable issue's repair flow, defined in the same way as translation for a configuration flow.
-      // Exactly one of `fix_flow` or `description. must be present.
+      // Exactly one of `fix_flow` or `description`. must be present.
       "fix_flow": {
         "abort": {
           "not_tea_time": "Can not re-heat the tea at this time"
@@ -281,7 +298,7 @@ The translation strings for repairs issues are defined under the `issues` key. A
     },
     "unfixable_problem": {
       "title": "This is not a fixable problem",
-      // Description of the issue, exactly one of `fix_flow` or `description. must be present.
+      // Description of the issue, exactly one of `fix_flow` or `description`. must be present.
       "description": "This issue can't be fixed by a flow."
     }
   }
@@ -324,6 +341,8 @@ The following example `strings.json` is for a device with its `translation_key` 
 #### Name of entities
 Integrations can provide translations for names of its entities. To do this, provide an `entity` object, that contains translations of the names and set the entity's `translation_key` property to a key under a domain in the `entity` object.
 If the entity's `translation_key` property is not `None` and the `entity` object provides a translated name, `EntityDescription.name` will be ignored.
+
+Localization of entity names is only supported for entities which set the [`has_entity_name`](/docs/core/entity#has_entity_name-true-mandatory-for-new-integrations) property to `True`.
 
 Entity components, like `sensor`, already have existing translations available that can be reused by referencing those. This includes common translations for entity names based on a device class. For example, it already has translations available for a "Temperature" sensor that can be referenced. Referencing existing translations is preferred, as it prevents translating the same thing multiple times.
 
