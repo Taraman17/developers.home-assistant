@@ -95,10 +95,14 @@ The example strings file below describes the different supported keys. Although 
       "invalid_api_key": "This message will be displayed if `invalid_api_key` is returned as a flow error."
     },
     "abort": {
-      "stale_api_key": "This message will be displayed if `stale_api_key` is returned as the abort reason."
+      "stale_api_key": "This message will be displayed if `stale_api_key` is returned as the abort reason. Supports Markdown."
     },
     "progress": {
-      "slow_task": "This message will be displayed if `slow_task` is returned as `progress_action` for `async_show_progress`."
+      "slow_task": "This message will be displayed if `slow_task` is returned as `progress_action` for `async_show_progress`. Supports Markdown."
+    },
+    "create_entry": {
+      "default": "This message will be displayed in the success dialog if `async_create_entry` is called with `description=None`. Supports Markdown.",
+      "custom": "This message will be displayed in the success dialog if `async_create_entry` is called with `description='custom'`. Supports Markdown."
     }
   },
   "options": {
@@ -179,6 +183,8 @@ each collapsible section of fields.
 Note that also the translations for `name` and `description` of fields which
 are displayed in a collapsible section should be under the `fields` key.
 
+Set description placeholders when the [service action is registered](/docs/dev_101_services/#service-action-description-example).
+
 ```json
 {
   "selector": {
@@ -194,7 +200,7 @@ are displayed in a collapsible section should be under the `fields` key.
   "services": {
     "set_speed": {
       "name": "Set speed",
-      "description": "Sets fan speed.",
+      "description": "Sets fan speed. [Learn more.]({docs_url})",
       "fields": {
         "speed": {
           "name": "Speed",
@@ -393,6 +399,8 @@ The following example `strings.json` is for a `sensor` entity with its `translat
 
 Integrations can provide translations for states of its entities under other integrations like sensor if the base entity component does not provide translations, or if the translation provided by the base entity component do not match the integration's entity. To do this, provide an `entity` object, that contains translations for states and set the entity's `translation_key` property to a key under a domain in the `entity` object.
 
+Note that translated states must be `snake_case` just like all other translation keys.
+
 To differentiate entities and their translations, provide different translation keys. The following example `strings.json` is for a Moon domain `sensor` entity with its `translation_key` property set to `phase`:
 
 ```json
@@ -415,6 +423,8 @@ To differentiate entities and their translations, provide different translation 
 #### Entity state attributes
 
 Integrations can provide translations for its entities' state attributes under other integrations like sensor if the base entity component does not provide translations, or if the translation provided by the base entity component do not match the integration's entity. To do this, provide an `entity` object, that contains translations for entity state attributes and set the entity's `translation_key` property to a key under a domain in the `entity` object.
+
+Note that translated state attributes must be `snake_case` just like all other translation keys.
 
 To differentiate entities and their translations, provide different translation keys. The following example `strings.json` is for a `demo` domain `climate` entity with its `translation_key` property set to `ubercool`, which has custom `fan_mode` and `swing_mode` settings:
 

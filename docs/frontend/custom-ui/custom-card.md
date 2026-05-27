@@ -12,25 +12,46 @@ Create a new file in your Home Assistant config dir as `<config>/www/content-car
 
 ```js
 class ContentCardExample extends HTMLElement {
-  // Whenever the state changes, a new `hass` object is set. Use this to
-  // update your content.
-  set hass(hass) {
-    // Initialize the content if it's not there yet.
-    if (!this.content) {
-      this.innerHTML = `
-        <ha-card header="Example-card">
-          <div class="card-content"></div>
-        </ha-card>
-      `;
-      this.content = this.querySelector("div");
-    }
+  // card is connected to the DOM
+  connectedCallback() {
+    const event = new CustomEvent('context-request', {
+      bubbles: true,
+      composed: true,
+      cancelable: true,
+    });
+
+    event.context = 'states'; // the key HA's user context provider uses
+    event.subscribe = true; // subscribe to future updates of this context, not just get the current value
+
+    event.callback = this._updateStates;
+
+    this.dispatchEvent(event);
+    
+    // initial render
+    this._render();
+  }
+
+  // receive the states updates and checks if the card needs a rerender
+  _updateStates = (states, unsubscribe) => {
+    // Store the unsubscribe function so we can call it when the card is removed from the DOM
+    this._unsubscribe = unsubscribe;
 
     const entityId = this.config.entity;
-    const state = hass.states[entityId];
-    const stateStr = state ? state.state : "unavailable";
+    console.log("update states", states, entityId)
+    const state = states[entityId];
+    const stateString = state ? state.state : "unavailable";
+    console.log("stateString", stateString, this.stateString)
+    if (this.stateString !== stateString) {
+      console.log("stateString changed, re-rendering")
+      this.stateString = stateString;
+      this._render();
+    }
+  }
 
-    this.content.innerHTML = `
-      The state of ${entityId} is ${stateStr}!
+  // renders the html of the card, just if needed
+  _render = () => {
+    this.innerHTML = `
+      The state of ${this.config.entity || "?"} is ${this.stateString || "unavailable"}!
       <br><br>
       <img src="http://via.placeholder.com/350x150">
     `;
@@ -59,6 +80,13 @@ class ContentCardExample extends HTMLElement {
       min_rows: 3,
       max_rows: 3,
     };
+  }
+
+  disconnectedCallback() {
+    if (this._unsubscribe) {
+      this._unsubscribe();
+      this._unsubscribe = undefined;
+    }
   }
 }
 
@@ -90,7 +118,9 @@ Custom cards are defined as a [custom element](https://developer.mozilla.org/en-
 
 Home Assistant will call `setConfig(config)` when the configuration changes (rare). If you throw an exception if the configuration is invalid, Home Assistant will render an error card to notify the user.
 
-Home Assistant will set [the `hass` property](/docs/frontend/data/) when the state of Home Assistant changes (frequent). Whenever the state changes, the component will have to update itself to represent the latest state.
+### Data context
+
+In the example, you see we use a custom event to request the states of Home Assistant. This is the recommended way to get data from Home Assistant, and to subscribe to future updates of this data. See a detailed documentation [here](/docs/frontend/data#available-contexts).
 
 ### Sizing in masonry view
 
@@ -385,10 +415,34 @@ From this function, you should return an object with up to 4 keys:
 - `schema` _(required)_: This is a list of schema objects, one per form field, defining various properties of the field, like the name and selector.
 - `computeLabel` _(optional)_: This callback function will be called per form field, allowing the card to define the label that will be displayed for the field. If `undefined`, Home Assistant may apply a known translation for generic field names like `entity`, or you can supply your own translations.
 - `computeHelper` _(optional)_: This callback function will be called per form field, allowing you to define longer helper text for the field, which will be displayed below the field.
-- `assertConfig` _(optional)_: On each update of the configuration, the user's config will be passed to this callback function. If you throw an `Error` during this callback, the visual editor will be disabled. This can be used to disable the visual editor when the user enters incompatible data, like entering an object in yaml for a selector that expects a string. If a subsequent execution of this callback does not throw an error, the visual editor will be re-enabled. 
+- `assertConfig` _(optional)_: On each update of the configuration, the user's config will be passed to this callback function. If you throw an `Error` during this callback, the visual editor will be disabled. This can be used to disable the visual editor when the user enters incompatible data, like entering an object in yaml for a selector that expects a string. If a subsequent execution of this callback does not throw an error, the visual editor will be re-enabled.
 
 This example then results in the following config form:
 ![Screenshot of the config form](/img/en/frontend/dashboard-custom-card-config-form.png)
 
+#### Form Schema Elements
+
+The form schema can have individual controls, grids, or expansion panels, configured with the following options:
+
+Controls:
+- `name` _(required)_: The name of the control.
+- `selector` _(optional)_: The selector configuration for this control (see [selectors](https://www.home-assistant.io/docs/blueprint/selectors/) for available options)
+- `type` _(optional)_: If selector is not defined, there are native form types like `float` and `boolean`, though using selectors is preferred.
+
+Grids:
+- `type` _(required)_: `grid`
+- `name` _(required)_: Key for this grid in the form data object (see `flatten`)
+- `schema` _(required)_: A list of child controls in the grid
+- `flatten` _(optional)_: `true`/`false` if child control data should be flattened into the main data dictionary, or under a sub-dictionary with the name of this grid 
+- `column_min_width` _(optional)_: CSS property for the minimum width of the cells in the grid (e.g. `200px`)
+
+Expansion Panel:
+- `type` _(required)_: `expandable`
+- `name` _(required)_: Key for this panel in the form data object (see `flatten`)
+- `schema` _(required)_: A list of child controls in the expansion panel
+- `title` _(optional)_: A heading on the panel
+- `flatten` _(optional)_: `true`/`false` if child control data should be flattened into the main data dictionary, or under a sub-dictionary with the name of this panel
+
+This is not an exhaustive list of all options, more configuration options are listed at [ha-form/types.ts](https://github.com/home-assistant/frontend/blob/master/src/components/ha-form/types.ts)
 
 
